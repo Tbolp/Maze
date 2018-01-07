@@ -58,6 +58,25 @@ class Person extends MovingCamera{
         super(camera);
         this._enabled = false;
         this._previous_position = this.position.clone();
+        this._state = "stand";
+        this._speed = 1.0;
+    }
+    update(detal){
+        console.log(detal);
+        switch(this._state){
+            case "forward":
+            this.moveForward(this._speed*detal);
+            break;
+            case "backward":
+            this.moveBackward(this._speed*detal);
+            break;
+            case "left":
+            this.moveLeft(this._speed*detal);
+            break;
+            case "right":
+            this.moveRight(this._speed*detal);
+            break;
+        }
     }
     addKeyListerner(html_element){
         document.addEventListener("pointerlockchange", (e)=>{
@@ -65,7 +84,7 @@ class Person extends MovingCamera{
                 this.enabled = false;
             }
         });
-        html_element.addEventListener("keydown", (e)=>{
+        html_element.addEventListener("keypress", (e)=>{
             if(e.code === "Enter")
                 this.enabled = true;
             if(this.enabled !== true)
@@ -73,21 +92,24 @@ class Person extends MovingCamera{
             this._previous_position.fromArray(this.position.toArray());
             switch(e.code){
                 case "KeyW":
-                this.moveForward(0.5);
+                this._state = "forward";
                 break;
                 case "KeyS":
-                this.moveBackward(0.5);
+                this._state = "backward";
                 break;
                 case "KeyA":
-                this.moveLeft(0.5);
+                this._state = "left";
                 break;
                 case "KeyD":
-                this.moveRight(0.5);
+                this._state = "right";
                 break;
                 default:
                 console.log(e.code);
                 break;
             }
+        });
+        html_element.addEventListener("keyup", (e)=>{
+            this._state = "stand";
         });
     }
     addMouseListerner(html_element){
@@ -323,6 +345,9 @@ class GameWorld{
         this._scene.add(this._maze);
         this._scene.add(this._person.getObject());
         this._person.radius = this._radius/3;
+        this._time = new Date().getTime();
+        this._newtime = this._time;
+        this._detal = 0;
         this._generate_ground();
         this._init_maze();
         this._init_out();
@@ -331,6 +356,10 @@ class GameWorld{
     }
     run(){
         this._judge_win();
+        this._newtime = new Date().getTime();
+        this._detal = (this._newtime - this._time) / 100.0;
+        this._time = this._newtime;
+        this._person.update(this._detal);
         this._systems.checkImpact(this._person);
         this._renderer.render(this._scene, this._camera);
         
